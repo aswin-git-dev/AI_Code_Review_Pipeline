@@ -1,0 +1,68 @@
+name: AI Documentation Generator
+
+on:
+  pull_request:
+    branches:
+      - main
+      - develop
+    types:
+      - opened
+      - reopened
+      - synchronize
+
+permissions:
+  contents: write        # needed to commit docs/README-docs.md to the PR branch
+  pull-requests: write   # needed to post PR comments
+
+jobs:
+  generate-docs:
+    name: Generate AI Docstrings via Hugging Face
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    env:
+      HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+      HF_MODEL_ID: ${{ secrets.HF_MODEL_ID || 'Qwen/Qwen2.5-Coder-7B-Instruct' }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      # ── 1. Checkout full history so git diff works correctly ──────────────
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          ref: ${{ github.event.pull_request.head.sha }}
+
+      # ── 2. Set up Python ──────────────────────────────────────────────────
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      # ── 3. Install dependencies ───────────────────────────────────────────
+      - name: Install Python dependencies
+        run: |
+          pip install --quiet huggingface_hub requests
+
+      # ── 4. Run the doc-generation script ─────────────────────────────────
+      - name: Generate docstrings and post PR comment
+        run: |
+          python scripts/generate_docs.py \
+            --base-sha "$BASE_SHA" \
+            --head-sha "$HEAD_SHA" \
+            --pr-number "$PR_NUMBER" \
+            --repo "$REPO"
+
+      # ── 5. Commit docs/README-docs.md back to the PR branch ──────────────
+      - name: Commit generated docs
+        run: |
+          git config user.name  "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add docs/README-docs.md
+          # Only commit if there are actual changes
+          git diff --cached --quiet || git commit -m "docs: auto-generate API docs via HF pipeline [skip ci]"
+          git push origin HEAD:${{ github.event.pull_request.head.ref }}

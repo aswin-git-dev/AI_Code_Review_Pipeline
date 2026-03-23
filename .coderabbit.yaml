@@ -1,0 +1,42 @@
+# .coderabbit.yaml
+# CodeRabbit AI Code Review configuration
+# Docs: https://docs.coderabbit.ai/getting-started/configure-coderabbit
+
+version: "2"
+
+language: "python"
+
+reviews:
+  # Trigger review on every PR open, reopen, and synchronize (push to branch)
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  commit_status: true
+  collapse_walkthrough: false
+
+  # Strictness levels: lenient | normal | assertive
+  profile: "assertive"
+
+  # Which paths to include/exclude from review
+  path_filters:
+    - "!docs/**"
+    - "!*.md"
+    - "!.github/**"
+
+  path_instructions:
+    - path: "**/*.py"
+      instructions: |
+        Review the Python code strictly for the following:
+        1. Missing or incomplete docstrings (Google-style preferred).
+        2. Unclear or single-letter variable names (e.g., r, d, n, w, h, pct).
+        3. Magic numbers — any numeric literal not assigned to a named constant.
+        4. Missing input validation or error handling.
+        5. Violations of PEP 8 style guide (naming, spacing, line lengths).
+        6. Functions that are too long or do more than one thing (SRP violations).
+        7. Missing type hints in function signatures.
+        Always suggest the corrected version inline.
+
+# Chat — allow @ mentions to discuss code inline
+chat:
+  auto_reply: true
