@@ -4,7 +4,7 @@
 
 version: "2"
 
-language: "python"
+language: "en"
 
 reviews:
   # Trigger review on every PR open, reopen, and synchronize (push to branch)
