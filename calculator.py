@@ -28,7 +28,25 @@ def is_prime(n):
             return False
     return True
 
-
+def emi(principal, annual_rate, years):
+    if principal <= 0:
+        raise ValueError("Principal must be positive")
+    if annual_rate < 0:
+        raise ValueError("Interest rate cannot be negative")
+    if years <= 0:
+        raise ValueError("Loan tenure must be positive")
+    
+    monthly_rate = annual_rate / 12 / 100
+    num_months = years * 12
+    
+    if monthly_rate == 0:
+        return principal / num_months
+    
+    emi_value = (principal * monthly_rate * (1 + monthly_rate) ** num_months) / (
+        (1 + monthly_rate) ** num_months - 1
+    )
+    return emi_value
+    
 def factorial(n):
     if n < 0:
         raise ValueError("Negative input")
