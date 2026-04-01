@@ -1,6 +1,7 @@
 # calculator.py
 # Demo module for STTP Workshop — AI Code Review & Auto-Doc Pipeline
 # INTENTIONAL FLAWS: no docstrings, magic numbers, unclear variable names
+import math
 
 def add(a, b):
     return a + b
@@ -49,7 +50,16 @@ def discount_price(price, pct):
         raise ValueError("Invalid percentage")
     d = price * pct / 100
     return price - d
+def sin_deg(degrees):
+    return math.sin(math.radians(degrees))
 
+
+def cos_deg(degrees):
+    return math.cos(math.radians(degrees))
+
+
+def tan_deg(degrees):
+    return math.tan(math.radians(degrees))
 
 def bmi(w, h):
     if h <= 0:
