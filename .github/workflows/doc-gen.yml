@@ -20,6 +20,16 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
 
+    # ── Secrets are mapped to env vars at the job level (CORRECT pattern) ──
+    env:
+      HF_API_TOKEN: ${{ secrets.HF_API_TOKEN }}
+      HF_MODEL_ID: ${{ secrets.HF_MODEL_ID || 'Qwen/Qwen2.5-Coder-7B-Instruct' }}
+      GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      PR_NUMBER: ${{ github.event.pull_request.number }}
+      BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+      REPO: ${{ github.repository }}
+
     steps:
       # ── 1. Checkout full history so git diff works correctly ──────────────
       - name: Checkout code
@@ -36,32 +46,18 @@ jobs:
 
       # ── 3. Install dependencies ───────────────────────────────────────────
       - name: Install Python dependencies
-        run: |
-          pip install --quiet huggingface_hub requests
+        run: pip install --quiet huggingface_hub requests
 
-      # ── 4. Set default env vars and validate required secrets ─────────────
-      - name: Set environment variables
+      # ── 4. Validate secrets — reference $VAR not ${{ secrets.X }} ─────────
+      - name: Validate secrets are available
         run: |
-          # Set HF_MODEL_ID with a safe fallback default
-          if [ -z "${{ secrets.HF_MODEL_ID }}" ]; then
-            echo "HF_MODEL_ID=Qwen/Qwen2.5-Coder-7B-Instruct" >> $GITHUB_ENV
-          else
-            echo "HF_MODEL_ID=${{ secrets.HF_MODEL_ID }}" >> $GITHUB_ENV
-          fi
-
-          # Validate that HF_API_TOKEN is set
-          if [ -z "${{ secrets.HF_API_TOKEN }}" ]; then
-            echo "::error::HF_API_TOKEN secret is not set. Go to Settings → Secrets and variables → Actions → New repository secret and add HF_API_TOKEN."
+          if [ -z "$HF_API_TOKEN" ]; then
+            echo "::error::HF_API_TOKEN is empty. Verify the secret is named exactly 'HF_API_TOKEN' in: Settings → Secrets and variables → Actions → Repository secrets."
             exit 1
           fi
-          echo "HF_API_TOKEN=${{ secrets.HF_API_TOKEN }}" >> $GITHUB_ENV
-
-          # Pass through GitHub context values
-          echo "GITHUB_TOKEN=${{ secrets.GITHUB_TOKEN }}" >> $GITHUB_ENV
-          echo "PR_NUMBER=${{ github.event.pull_request.number }}" >> $GITHUB_ENV
-          echo "BASE_SHA=${{ github.event.pull_request.base.sha }}" >> $GITHUB_ENV
-          echo "HEAD_SHA=${{ github.event.pull_request.head.sha }}" >> $GITHUB_ENV
-          echo "REPO=${{ github.repository }}" >> $GITHUB_ENV
+          echo "✅ HF_API_TOKEN is set (${#HF_API_TOKEN} characters)"
+          echo "✅ HF_MODEL_ID = $HF_MODEL_ID"
+          echo "✅ REPO = $REPO"
 
       # ── 5. Run the doc-generation script ─────────────────────────────────
       - name: Generate docstrings and post PR comment
